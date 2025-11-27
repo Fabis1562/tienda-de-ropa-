@@ -6,5 +6,5 @@ Port 3000 is in use, trying another one...
 
   VITE v6.3.5  ready in 346 ms
 
-  ➜  Local:   http://localhost:3001/
+  ➜  Local:   http://192.168.1.39:3001/
   ➜  Network: use --host to expose

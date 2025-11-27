@@ -1,0 +1,9 @@
+authtoken: 360TxJijMRXAhFSWvN5LZN15NUs_2tRFiLiaQDPL6DY5mX4J5
+version: "2"
+tunnels:
+  mi-backend:
+    proto: http
+    addr: 3001
+  mi-frontend:
+    proto: http
+    addr: 5173

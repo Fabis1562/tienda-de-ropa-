@@ -57,7 +57,7 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001', // <--- CORREGIDO: Apuntar al puerto REAL de tu backend
+        target: 'http://192.168.1.39:3001', // <--- CORREGIDO: Apuntar al puerto REAL de tu backend
         changeOrigin: true,
         secure: false,
       },

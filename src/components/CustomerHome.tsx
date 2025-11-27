@@ -23,7 +23,7 @@ export function CustomerHome({ onNavigate, onAddToCart }: CustomerHomeProps) {
 
   // Cargar productos reales
   useEffect(() => {
-    fetch('http://localhost:3001/api/products')
+    fetch('http://192.168.1.39:3001/api/products')
       .then(res => res.json())
       .then(data => {
         const formattedData = data.map((item: any) => ({
@@ -70,8 +70,7 @@ export function CustomerHome({ onNavigate, onAddToCart }: CustomerHomeProps) {
         {/* Banner */}
         <div className="mt-5 relative rounded-2xl overflow-hidden h-48">
            <img 
-             src="https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
-             alt="Banner" 
+src="https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"             alt="Banner" 
              className="w-full h-full object-cover"
            />
            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-5">

@@ -21,7 +21,7 @@ export function ProductCatalog({ onNavigate, onAddToCart }: ProductCatalogProps)
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/products")
+    fetch("http://192.168.1.39:3001/api/products")
       .then(res => res.json())
       .then(data => {
         const formatted = data.map((item: any) => ({

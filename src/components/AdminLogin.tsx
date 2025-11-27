@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Lock, User, Loader2 } from "lucide-react";
 
 interface AdminLoginProps {
-  onLogin: () => void;
+  // CAMBIO: Ahora onLogin recibe dos argumentos (rol y menú)
+  onLogin: (role: string, allowedMenus: string[]) => void;
 }
 
 export function AdminLogin({ onLogin }: AdminLoginProps) {
@@ -17,8 +18,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
     setIsLoading(true);
 
     try {
-      // Petición al Backend
-      const response = await fetch("http://localhost:3001/api/login", {
+      const response = await fetch("http://192.168.1.39:3001/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -27,10 +27,9 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Login exitoso
-        onLogin();
+        // CAMBIO: Pasamos los datos del usuario al padre (App.tsx)
+        onLogin(data.user.role, data.user.allowedMenus);
       } else {
-        // Error de credenciales
         setError(data.message || "Credenciales inválidas");
       }
     } catch (err) {
@@ -44,9 +43,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-5">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-accent rounded-2xl flex items-center justify-center mx-auto mb-4 text-white text-3xl font-bold shadow-lg">
-            👔
-          </div>
+          <div className="w-20 h-20 bg-accent rounded-2xl flex items-center justify-center mx-auto mb-4 text-white text-3xl font-bold shadow-lg">👔</div>
           <h1 className="text-gray-900 mb-2 font-bold text-2xl">Tienda de Ropa</h1>
           <p className="text-gray-600">Acceso Seguro a Base de Datos</p>
         </div>
@@ -77,7 +74,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-2 text-sm font-medium">Contraseña</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Contraseña</label>
               <div className="relative group">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-accent transition-colors" />
                 <input
@@ -97,19 +94,12 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
               className="w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" /> Verificando...
-                </>
-              ) : (
-                "Ingresar al Sistema"
-              )}
+                <> <Loader2 className="w-5 h-5 animate-spin" /> Verificando... </>
+              ) : ( "Ingresar al Sistema" )}
             </button>
           </form>
         </div>
-        
-        <p className="text-center text-gray-400 text-sm mt-6">
-           Sistema Escolar v1.0
-        </p>
+        <p className="text-center text-gray-400 text-sm mt-6">Sistema Escolar v1.0</p>
       </div>
     </div>
   );

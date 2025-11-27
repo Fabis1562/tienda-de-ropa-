@@ -1,14 +1,20 @@
 import { useState } from "react";
+import { Toaster } from "sonner";
+
+// --- IMPORTACIONES CORREGIDAS (Verifica que las rutas coincidan con tus carpetas) ---
 import { AdminLogin } from "./components/AdminLogin";
-import { AdminDashboard } from "./components/AdminDashboard";
+// Si AdminDashboard está en 'ui', usa esta. Si está en 'components', quita el '/ui'
+import { AdminDashboard } from "./components/AdminDashboard"; 
 import { CustomerHome } from "./components/CustomerHome";
 import { ProductCatalog } from "./components/ProductCatalog";
 import { ShoppingCart } from "./components/ShoppingCart";
 import { ProductDetail } from "./components/ProductDetail";
-import { BottomNav } from './components/BottomNav';
-import { Toaster } from "sonner"; // Para notificaciones bonitas
+import { Checkout } from "./components/Checkout";
+import { CustomerAuth } from "./components/CustomerAuth";
+// BottomNav también suele estar en 'ui' según tus capturas anteriores
+import { BottomNav } from "./components/BottomNav"; 
+// -------------------------------
 
-// Tipos para el carrito
 interface CartItem {
   id: number;
   name: string;
@@ -20,21 +26,23 @@ interface CartItem {
 }
 
 function App() {
-  // Estado de navegación: 'home', 'catalog', 'cart', 'detail', 'admin', 'login'
   const [currentView, setCurrentView] = useState("home");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  
-  // Estado del Carrito
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  // --- LÓGICA DE NAVEGACIÓN ---
+  // ESTADOS PARA PERMISOS Y LOGIN
+  const [userRole, setUserRole] = useState("");
+  const [permissions, setPermissions] = useState<string[]>([]);
+  
+  // ESTADO PARA EL CLIENTE (Para saber si ya se registró antes de pagar)
+  const [currentCustomer, setCurrentCustomer] = useState<string | null>(null);
+
   const navigateTo = (view: string, data?: any) => {
     if (data) setSelectedProduct(data);
     setCurrentView(view);
     window.scrollTo(0, 0);
   };
 
-  // --- LÓGICA DEL CARRITO ---
   const addToCart = (product: any, quantity = 1, size = "M", color = "Negro") => {
     const newItem = {
       id: product.id,
@@ -45,50 +53,55 @@ function App() {
       color,
       quantity
     };
-
     setCart((prev) => {
-      // Si ya existe el producto con misma talla y color, sumamos cantidad
       const existing = prev.find(item => item.id === newItem.id && item.size === size && item.color === color);
       if (existing) {
-        return prev.map(item => 
-          (item.id === newItem.id && item.size === size && item.color === color)
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
+        return prev.map(item => (item.id === newItem.id && item.size === size && item.color === color) ? { ...item, quantity: item.quantity + quantity } : item);
       }
       return [...prev, newItem];
     });
-    
-    // Pequeña notificación (opcional)
     alert("Producto añadido al carrito"); 
   };
 
-  const removeFromCart = (id: number) => {
-    setCart(prev => prev.filter(item => item.id !== id));
-  };
-
+  const removeFromCart = (id: number) => setCart(prev => prev.filter(item => item.id !== id));
+  
   const updateQuantity = (id: number, quantity: number) => {
     if (quantity < 1) return;
     setCart(prev => prev.map(item => item.id === id ? { ...item, quantity } : item));
   };
+  
+  const clearCart = () => setCart([]);
 
-  // --- RENDERIZADO DE VISTAS ---
+  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const finalTotal = cartTotal > 100 ? cartTotal : (cartTotal > 0 ? cartTotal + 5.99 : 0);
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Notificaciones */}
       <Toaster position="top-center" />
 
-      {/* VISTA: LOGIN ADMIN */}
+      {/* LOGIN ADMIN */}
       {currentView === "login" && (
-        <AdminLogin onLogin={() => navigateTo("admin")} />
+        <AdminLogin onLogin={(role, allowedMenus) => {
+          setUserRole(role);
+          setPermissions(allowedMenus);
+          navigateTo("admin");
+        }} />
       )}
 
-      {/* VISTA: DASHBOARD ADMIN */}
+      {/* DASHBOARD ADMIN */}
       {currentView === "admin" && (
-        <AdminDashboard onLogout={() => navigateTo("home")} />
+        <AdminDashboard 
+          onLogout={() => {
+            setUserRole("");
+            setPermissions([]);
+            navigateTo("home");
+          }} 
+          role={userRole}
+          allowedMenus={permissions}
+        />
       )}
 
-      {/* VISTAS DE CLIENTE (TIENDA) */}
+      {/* TIENDA (HOME) */}
       {currentView === "home" && (
         <>
           <CustomerHome onNavigate={navigateTo} onAddToCart={addToCart} />
@@ -96,6 +109,7 @@ function App() {
         </>
       )}
 
+      {/* CATÁLOGO */}
       {currentView === "catalog" && (
         <>
           <ProductCatalog onNavigate={navigateTo} onAddToCart={addToCart} />
@@ -103,50 +117,61 @@ function App() {
         </>
       )}
 
+      {/* DETALLE PRODUCTO */}
       {currentView === "detail" && selectedProduct && (
-        <ProductDetail 
-          product={selectedProduct} 
-          onNavigate={navigateTo} 
-          onAddToCart={addToCart} 
-        />
+        <ProductDetail product={selectedProduct} onNavigate={navigateTo} onAddToCart={addToCart} />
       )}
 
+      {/* CARRITO */}
       {currentView === "cart" && (
         <>
           <ShoppingCart 
             cartItems={cart} 
             onNavigate={navigateTo} 
-            onUpdateQuantity={updateQuantity}
-            onRemoveItem={removeFromCart}
+            onUpdateQuantity={updateQuantity} 
+            onRemoveItem={removeFromCart} 
           />
           <BottomNav active="cart" onNavigate={navigateTo} cartCount={cart.length} />
         </>
       )}
 
-      {/* VISTA: PERFIL (Botoncito para ir al Admin) */}
+      {/* CHECKOUT (Con protección de Login de Cliente) */}
+      {currentView === "checkout" && (
+        currentCustomer ? (
+          <Checkout 
+            cart={cart} 
+            total={finalTotal} 
+            onNavigate={navigateTo} 
+            onClearCart={clearCart} 
+            customerName={currentCustomer} // Pasamos el nombre real
+          />
+        ) : (
+          <CustomerAuth onSuccess={(name) => {
+            setCurrentCustomer(name);
+            // Al actualizarse el estado, React renderizará el Checkout automáticamente
+          }} />
+        )
+      )}
+
+      {/* PERFIL */}
       {currentView === "profile" && (
         <div className="p-6 min-h-screen bg-white pb-20">
           <h1 className="text-2xl font-bold mb-6">Mi Perfil</h1>
-          {/* Aquí simulamos los datos del usuario */}
-          <div className="flex items-center gap-4 mb-8 p-4 bg-gray-50 rounded-xl">
-            <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center text-white text-2xl">
-              👤
-            </div>
-            <div>
-              <h2 className="font-bold">Usuario Demo</h2>
-              <p className="text-sm text-gray-500">cliente@tiendaropa.com</p>
-            </div>
-          </div>
+          {currentCustomer ? (
+             <div className="flex items-center gap-4 mb-8 p-4 bg-gray-50 rounded-xl">
+                <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center text-white text-2xl">👤</div>
+                <div>
+                  <h2 className="font-bold">{currentCustomer}</h2>
+                  <p className="text-sm text-gray-500">Cliente Registrado</p>
+                </div>
+             </div>
+          ) : (
+             <p className="mb-4 text-gray-500">Inicia sesión para ver tus datos.</p>
+          )}
 
-          <div className="space-y-2">
-            {/* BOTÓN SECRETO PARA IR AL LOGIN DE ADMIN */}
-            <button 
-              onClick={() => navigateTo("login")}
-              className="w-full p-4 bg-gray-900 text-white rounded-xl flex items-center justify-center gap-2"
-            >
-              🔐 Acceso Administrador
-            </button>
-          </div>
+          <button onClick={() => navigateTo("login")} className="w-full p-4 bg-gray-900 text-white rounded-xl flex items-center justify-center gap-2">
+            Acceso Administrador
+          </button>
           
           <BottomNav active="profile" onNavigate={navigateTo} cartCount={cart.length} />
         </div>

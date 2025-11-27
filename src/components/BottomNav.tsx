@@ -9,7 +9,7 @@ interface BottomNavProps {
 export function BottomNav({ active, onNavigate, cartCount = 0 }: BottomNavProps) {
   const navItems = [
     { id: 'home', icon: Home, label: 'Inicio' },
-    { id: 'catalog', icon: LayoutGrid, label: 'Categorías' },
+    { id: 'catalog', icon: LayoutGrid, label: 'Catálogo' },
     { id: 'cart', icon: ShoppingCart, label: 'Carrito', badge: cartCount },
     { id: 'profile', icon: User, label: 'Perfil' },
   ];
@@ -20,30 +20,17 @@ export function BottomNav({ active, onNavigate, cartCount = 0 }: BottomNavProps)
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.id;
-          
           return (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className="flex flex-col items-center gap-1 relative"
-            >
+            <button key={item.id} onClick={() => onNavigate(item.id)} className="flex flex-col items-center gap-1 relative">
               <div className="relative">
-                <Icon 
-                  className={`w-6 h-6 transition-colors ${
-                    isActive ? 'text-accent' : 'text-gray-500'
-                  }`}
-                />
+                <Icon className={`w-6 h-6 transition-colors ${isActive ? 'text-black' : 'text-gray-400'}`} />
                 {item.badge !== undefined && item.badge > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-accent text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                     {item.badge}
                   </span>
                 )}
               </div>
-              <span className={`text-xs transition-colors ${
-                isActive ? 'text-accent' : 'text-gray-500'
-              }`}>
-                {item.label}
-              </span>
+              <span className={`text-[10px] font-medium ${isActive ? 'text-black' : 'text-gray-400'}`}>{item.label}</span>
             </button>
           );
         })}

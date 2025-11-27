@@ -40,7 +40,7 @@ export function ProductsManagement() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/products');
+      const response = await fetch('http://192.168.1.39:3001/api/products');
       if (!response.ok) throw new Error('Error');
       const data = await response.json();
       
@@ -63,7 +63,7 @@ export function ProductsManagement() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("¿Eliminar?")) return;
-    await fetch(`http://localhost:3001/api/products/${id}`, { method: 'DELETE' });
+    await fetch(`http://192.168.1.39:3001/api/products/${id}`, { method: 'DELETE' });
     fetchProducts();
   };
 
@@ -110,8 +110,8 @@ export function ProductsManagement() {
     }
 
     const url = editingId 
-        ? `http://localhost:3001/api/products/${editingId}` 
-        : 'http://localhost:3001/api/products';
+        ? `http://192.168.1.39:3001/api/products/${editingId}` 
+        : 'http://192.168.1.39:3001/api/products';
     const method = editingId ? 'PUT' : 'POST';
 
     try {

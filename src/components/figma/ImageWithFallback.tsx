@@ -1,27 +1,27 @@
-import React, { useState } from 'react'
+import { useState } from 'react';
+import { ImageOff } from 'lucide-react';
 
-const ERROR_IMG_SRC =
-  'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODgiIGhlaWdodD0iODgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBvcGFjaXR5PSIuMyIgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIzLjciPjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iNiIvPjxwYXRoIGQ9Im0xNiA1OCAxNi0xOCAzMiAzMiIvPjxjaXJjbGUgY3g9IjUzIiBjeT0iMzUiIHI9IjciLz48L3N2Zz4KCg=='
+interface Props extends React.ImgHTMLAttributes<HTMLImageElement> {
+  fallbackSrc?: string;
+}
 
-export function ImageWithFallback(props: React.ImgHTMLAttributes<HTMLImageElement>) {
-  const [didError, setDidError] = useState(false)
-
-  const handleError = () => {
-    setDidError(true)
-  }
-
-  const { src, alt, style, className, ...rest } = props
-
-  return didError ? (
-    <div
-      className={`inline-block bg-gray-100 text-center align-middle ${className ?? ''}`}
-      style={style}
-    >
-      <div className="flex items-center justify-center w-full h-full">
-        <img src={ERROR_IMG_SRC} alt="Error loading image" {...rest} data-original-url={src} />
-      </div>
+export function ImageWithFallback({ src, alt, className, fallbackSrc = 'https://via.placeholder.com/300?text=Sin+Imagen', ...props }: Props) {
+  const [error, setError] = useState(false);
+  return (
+    <div className={`relative overflow-hidden bg-gray-100 ${className}`}>
+      {!error ? (
+        <img
+          src={src || fallbackSrc}
+          alt={alt}
+          className="w-full h-full object-cover"
+          onError={() => setError(true)}
+          {...props}
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
+          <ImageOff className="h-1/3 w-1/3" />
+        </div>
+      )}
     </div>
-  ) : (
-    <img src={src} alt={alt} className={className} style={style} {...rest} onError={handleError} />
-  )
+  );
 }
