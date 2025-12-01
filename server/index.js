@@ -262,16 +262,55 @@ app.post('/api/register-client', async (req, res) => {
 app.get('/api/sales-report', async (req, res) => {
   try {
     const connection = await connectionPromise;
-    const [totales] = await connection.query(`SELECT SUM(total) as totalRevenue, COUNT(*) as totalOrders, AVG(total) as averageTicket FROM pedidos`);
+    
+    // 1. Totales Generales
+    const [totales] = await connection.query(`
+      SELECT 
+        COALESCE(SUM(total), 0) as totalRevenue, 
+        COUNT(*) as totalOrders, 
+        COALESCE(AVG(total), 0) as averageTicket 
+      FROM pedidos
+    `);
+
+    // 2. Ventas por Día
     const [porDia] = await connection.query(`
-      SELECT DATE_FORMAT(fecha, '%Y-%m-%d') as fullDate, DATE_FORMAT(fecha, '%a') as day, SUM(total) as ingresos 
-      FROM pedidos WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY fullDate, day ORDER BY fullDate ASC
+      SELECT 
+        DATE_FORMAT(fecha, '%Y-%m-%d') as fullDate, 
+        DATE_FORMAT(fecha, '%a') as day, 
+        COALESCE(SUM(total), 0) as ingresos 
+      FROM pedidos 
+      WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) 
+      GROUP BY fullDate, day 
+      ORDER BY fullDate ASC
     `);
-    const [topProductos] = await connection.query(`
-      SELECT p.Nombre_prod as name, SUM(dp.cantidad) as value FROM detalle_pedido dp JOIN productos p ON dp.idProducto = p.idProductos GROUP BY p.idProductos ORDER BY value DESC LIMIT 5
-    `);
-    res.json({ stats: totales[0], chartData: porDia, topProducts: topProductos });
-  } catch (err) { res.status(500).json({ error: 'Error' }); }
+
+    // 3. TOP PRODUCTOS (Desde la Vista SQL)
+    const [vistaRows] = await connection.query(`SELECT * FROM vista_productos_top LIMIT 5`);
+    
+    // --- CORRECCIÓN CLAVE: Convertir a Number() explícitamente ---
+    const topProductos = vistaRows.map(row => ({
+        name: row.Producto,
+        // Si viene como string "5", lo convierte a número 5
+        value: Number(row.Unidades_Totales), 
+        revenue: Number(row.Dinero_Generado)
+    }));
+
+    // También convertimos los datos de la gráfica de líneas
+    const chartDataFixed = porDia.map(d => ({
+        ...d,
+        ingresos: Number(d.ingresos)
+    }));
+
+    res.json({ 
+        stats: totales[0], 
+        chartData: chartDataFixed, 
+        topProducts: topProductos 
+    });
+
+  } catch (err) { 
+    console.error(err);
+    res.status(500).json({ error: 'Error' }); 
+  }
 });
 
 // GET RESERVAS
@@ -318,6 +357,29 @@ app.post('/api/login', async (req, res) => {
       res.status(401).json({ success: false, message: 'Credenciales inválidas' });
     }
   } catch (err) { res.status(500).json({ success: false, message: 'Error servidor' }); }
+});
+
+// ENDPOINT: OBTENER VISTA DE PRODUCTOS TOP
+app.get('/api/analytics/top-products', async (req, res) => {
+  try {
+    const connection = await connectionPromise;
+    
+    // ¡MIRA QUÉ FÁCIL! Consultamos la vista como si fuera una tabla
+    const [rows] = await connection.query('SELECT * FROM vista_productos_top LIMIT 5');
+    
+    // Adaptamos para que la gráfica del frontend lo entienda
+    const data = rows.map(row => ({
+      name: row.Producto,
+      value: Number(row.Unidades_Totales), // Para la gráfica de pastel
+      revenue: Number(row.Dinero_Generado),
+      image: row.Imagen
+    }));
+
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json([]);
+  }
 });
 
 // START SERVER
